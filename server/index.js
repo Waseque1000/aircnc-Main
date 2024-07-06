@@ -49,6 +49,29 @@ async function run() {
       res.send(result);
     });
 
+    // ? get all rooms
+    app.get("/rooms", async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ` get a single room //
+    app.get("/room/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await roomsCollection.findOne(query);
+      console.log(result);
+      res.send(result);
+    });
+
+    // ! Save a room in Database
+    app.post("/rooms", async (req, res) => {
+      const room = req.body;
+      console.log(room);
+      const result = await roomsCollection.insertOne(room);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
