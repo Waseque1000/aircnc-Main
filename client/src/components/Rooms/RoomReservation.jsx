@@ -1,8 +1,76 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import Calender from "../Rooms/Calender";
 import Button from "../Button/Button";
+import { AuthContext } from "../../providers/AuthProvider";
+import BookingModal from "../Modal/BookingModal";
+import toast from "react-hot-toast";
+import { formatDistance } from "date-fns";
+import { addBookingData, updateStatus } from "../../api/bookings";
 
 const RoomReservation = ({ roomData }) => {
+  const { user, role } = useContext(AuthContext);
+
+  const totalPrice =
+    parseFloat(
+      formatDistance(new Date(roomData.to), new Date(roomData.from)).split(
+        " "
+      )[0]
+    ) * roomData.price;
+  console.log(totalPrice);
+  const [isOpen, setIsOpen] = useState(false);
+  //
+  const closeModal = () => {
+    setIsOpen(false);
+  };
+
+  //
+  const [value, setValue] = useState({
+    startDate: new Date(roomData?.from),
+    endDate: new Date(roomData?.to),
+    key: "selectionn",
+  });
+
+  //
+  const [bookingInfo, setBookingInfo] = useState({
+    guest: {
+      name: user.displayName,
+      email: user.email,
+      image: user.photoURL,
+    },
+    host: roomData.host.email,
+    location: roomData.location,
+    price: totalPrice,
+    to: value.endDate,
+    from: value.startDate,
+    title: roomData.title,
+    roomId: roomData._id,
+    immage: roomData.immage,
+  });
+
+  //
+  const handleSelect = (range) => {
+    setValue({ ...value });
+    // setValue({ range });
+  };
+
+  //
+
+  const modalHandeler = () => {
+    addBookingData(bookingInfo)
+      .then((data) => {
+        console.log(data);
+        updateStatus(roomData._id, true).then((data) => {
+          console.log(data);
+          toast.success("Booking SuccessFul !");
+        });
+        navigate("/dashboard/my-bookings");
+        closeModal();
+      })
+      .catch((err) => {
+        console.log(err.message);
+        closeModal();
+      });
+  };
   return (
     <div className="bg-white rounded-xl border-[1px] border-neutral-200 overflow-hidden">
       <div className="flex flex-row items-center gap-1 p-4">
@@ -11,17 +79,28 @@ const RoomReservation = ({ roomData }) => {
       </div>
       <hr />
       <div className="flex justify-center">
-        <Calender />
+        <Calender handleSelect={handleSelect} value={value} />
       </div>
       <hr />
       <div className="p-4">
-        <Button label="Reserve" />
+        {/* TODO: */}
+        <Button
+          onClick={() => setIsOpen(true)}
+          disabled={roomData.host.email === user.email || roomData.booked}
+          label="Reserve"
+        />
       </div>
       <hr />
       <div className="p-4 flex flex-row items-center justify-between font-semibold text-lg">
         <div>Total</div>
-        <div>$ 300</div>
+        <div>$ {totalPrice}</div>
       </div>
+      <BookingModal
+        modalHandeler={modalHandeler}
+        bookingInfo={bookingInfo}
+        isOpen={isOpen}
+        closeModal={closeModal}
+      />
     </div>
   );
 };

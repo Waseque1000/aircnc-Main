@@ -49,6 +49,15 @@ async function run() {
       res.send(result);
     });
 
+    // ! get user
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      console.log(result);
+      res.send(result);
+    });
+
     // ? get all rooms
     app.get("/rooms", async (req, res) => {
       const result = await roomsCollection.find().toArray();
@@ -69,6 +78,41 @@ async function run() {
       const room = req.body;
       console.log(room);
       const result = await roomsCollection.insertOne(room);
+      res.send(result);
+    });
+
+    //? save the booking data
+
+    app.post("/bookings", async (req, res) => {
+      const bookings = req.body;
+      console.log(bookings);
+      const result = await bookingsCollection.insertOne(bookings);
+      res.send(result);
+    });
+
+    // ? Update room bookings stats
+    app.patch("/rooms/status/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          booked: status,
+        },
+      };
+      const update = await roomsCollection.updateOne(query, updateDoc);
+      res.send(update);
+    });
+
+    // get bookings fro guest
+
+    app.get("/bookings", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { "guest-email": email };
+      const result = await roomsCollection.find(query).toArray();
       res.send(result);
     });
 
